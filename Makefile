@@ -1,5 +1,5 @@
-make: main.c dump_tcp_packet.c
-	gcc -o analyser main.c dump_tcp_packet.c -lpcap -I.
+make: main.c dump_packets.c
+	gcc -o analyser main.c dump_packets.c -lpcap -I.
 
 clean:
 	rm analyser

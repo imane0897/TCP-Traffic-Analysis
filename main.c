@@ -20,7 +20,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include "main.h"
-#include "dump_tcp_packet.h"
+#include "dump_packets.h"
 
 
 /*--------Global Variables--------*/

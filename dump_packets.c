@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include "main.h"
+#include "dump_packets.h"
 
 /* dump_tcp_packet()
  *
