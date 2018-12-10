@@ -46,8 +46,8 @@ struct tcp_header {
 struct connection {
   char src[MAX_STR_LEN];  // source ip
   char dst[MAX_STR_LEN];  // destination ip
-  uint16_t port_src;      // source port number
-  uint16_t port_dst;      // destination port number
+  uint16_t src_port;      // source port number
+  uint16_t dst_port;      // destination port number
   int tflags;
   int syn_count;  // flag count
   int fin_count;
@@ -56,8 +56,8 @@ struct connection {
   struct timeval starting_time;
   struct timeval ending_time;
   double duration;
-  int num_packet_src;  // number of packets sent out by source
-  int num_packet_dst;  // number of packets sent out by destination
+  int src_num_packet;  // number of packets sent out by source
+  int dst_num_packet;  // number of packets sent out by destination
   int num_total_packets;
   int cur_data_len_src;  // num data bytes
   int cur_data_len_dst;  // num data bytes
@@ -76,8 +76,8 @@ struct connection {
 struct built {
   char src[MAX_STR_LEN];  // source ip
   char dst[MAX_STR_LEN];  // destination ip
-  uint16_t port_src;      // source port number
-  uint16_t port_dst;      // destination port number
+  uint16_t src_port;      // source port number
+  uint16_t dst_port;      // destination port number
   double started;
   double duration;
   int syn_count;  // flag count*/
@@ -100,18 +100,45 @@ struct RTT {
   int ack_num;
 };
 
-/* Some helper functions, which we define at the end of this file. */
-
 /* Returns a string representation of a timestamp. */
 const char *timestamp_string(struct timeval ts);
 
 /* Report a problem with dumping the packet with the given timestamp. */
 void problem_pkt(const char *reason);
 
-/* Report the specific problem of a packet being too short. */
+// Report parser error of specific problem when a packet being too short
 void parser_error(const char *truncated_hdr);
 
-extern struct connection cList[MAX_NUM_CONNECTION];
+// extern struct connection cList[MAX_NUM_CONNECTION];
+// extern int total;
+
+extern int print;
+extern int connected;
+extern int count;
 extern int total;
+extern int counts;
+extern int countf;
+extern int countr;
+extern int countEnd;
+extern int minP;
+extern int maxP;
+extern int total_p;
+extern double total_win;
+extern double all_win;
+extern double total_time;
+extern double during;
+extern double min_time;
+extern double max_time;
+extern double all_time;
+extern int total_pack;
+extern double Total_RTT;
+extern double min_RTT;
+extern double max_RTT;
+extern int manys;
+
+extern struct connection cList[MAX_NUM_CONNECTION];
+extern struct built actual[MAX_NUM_CONNECTION];
+extern struct built actual1[MAX_NUM_CONNECTION];
+extern struct RTT slist[MAX_NUM_CONNECTION];
 
 #endif  // MAIN_H_

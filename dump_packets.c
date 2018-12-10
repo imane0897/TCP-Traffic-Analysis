@@ -21,8 +21,8 @@
 
 void dump_packets(const unsigned char *packet, struct timeval ts,
                   unsigned int capture_len) {
-  struct ip *ip;
-  struct tcp_header *tcp;
+  struct ip *ip_ptr;
+  struct tcp_header *tcp_ptr;
   struct connection connect;
 
   unsigned int IP_header_length;
@@ -47,16 +47,16 @@ void dump_packets(const unsigned char *packet, struct timeval ts,
     return;
   }
 
-  ip = (struct ip *)packet;
-  IP_header_length = ip->ip_hl * 4;  // ip_hl is in 4-byte words
+  ip_ptr = (struct ip *)packet;
+  IP_header_length = ip_ptr->ip_hl * 4;  // ip_hl is in 4-byte words
 
   if (capture_len < IP_header_length) {
     parser_error("IP header with options");
     return;
   }
 
-  if (ip->ip_p != IPPROTO_TCP) {
-    problem_pkt("non-TCP packet");
+  if (ip_ptr->ip_p != IPPROTO_TCP) {
+    problem_pkt("Not TCP packet");
     return;
   }
 
@@ -74,24 +74,24 @@ void dump_packets(const unsigned char *packet, struct timeval ts,
   /*
    * TCP info -> cList[]
    */
-  tcp = (struct tcp_header *)packet;
-  
-  char *source = inet_ntoa(ip->ip_src);
+  tcp_ptr = (struct tcp_header *)packet;
+
+  char *source = inet_ntoa(ip_ptr->ip_src);
   strcpy(connect.src, source);
-  char *destination = inet_ntoa(ip->ip_dst);
+  char *destination = inet_ntoa(ip_ptr->ip_dst);
   strcpy(connect.dst, destination);
-  connect.port_src = ntohs(tcp->th_sport);
-  connect.port_dst = ntohs(tcp->th_dport);
+  connect.src_port = ntohs(tcp_ptr->th_sport);
+  connect.dst_port = ntohs(tcp_ptr->th_dport);
   strcpy(cList[total].src, connect.src);
   strcpy(cList[total].dst, connect.dst);
-  cList[total].port_src = connect.port_src;
-  cList[total].port_dst = connect.port_dst;
+  cList[total].src_port = connect.src_port;
+  cList[total].dst_port = connect.dst_port;
   cList[total].is_set = 0;
-  cList[total].tflags = (unsigned int)tcp->th_flags;
-  cList[total].length = capture_len - TH_OFF(tcp) * 4;
-  cList[total].win = ntohs(tcp->th_win);
-  cList[total].seq = ntohl(tcp->th_seq);
-  cList[total].ack = ntohl(tcp->th_ack);
+  cList[total].tflags = (unsigned int)tcp_ptr->th_flags;
+  cList[total].length = capture_len - TH_OFF(tcp_ptr) * 4;
+  cList[total].win = ntohs(tcp_ptr->th_win);
+  cList[total].seq = ntohl(tcp_ptr->th_seq);
+  cList[total].ack = ntohl(tcp_ptr->th_ack);
 
   static char timestamp_string_buf[256];
 
