@@ -109,8 +109,7 @@ const char *timestamp_string(struct timeval ts);
 void problem_pkt(const char *reason);
 
 /* Report the specific problem of a packet being too short. */
-void too_short(const char *truncated_hdr);
-
+void parser_error(const char *truncated_hdr);
 
 extern struct connection cList[MAX_NUM_CONNECTION];
 extern int total;

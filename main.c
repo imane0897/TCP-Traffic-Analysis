@@ -1,11 +1,12 @@
 /*
-  This project is a tool for TCP traffic analysis.
+ * This project is a tool for TCP traffic analysis.
+ *
+ * Requirement: TCP trace file (Recommend using Wireshark for generation)
+ * Author:      An Yameng
+ * Repository:  https://github.com/imane0897/TCP-Traffic-Analysis
+ */
 
-  Requirement: TCP trace file (Recommend using Wireshark for generation)
-  Author:      An Yameng
-  Repository:  https://github.com/imane0897/TCP-Traffic-Analysis
-*/
-
+#include "main.h"
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <errno.h>
@@ -19,9 +20,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include "main.h"
 #include "dump_packets.h"
-
 
 /*--------Global Variables--------*/
 int print;
@@ -54,9 +53,6 @@ struct built actual[MAX_NUM_CONNECTION];
 struct built actual1[MAX_NUM_CONNECTION];
 struct RTT slist[MAX_NUM_CONNECTION];
 /*--------End of Variables--------*/
-
-
-
 
 /* Count the total number of connections and store it. */
 void buildFilter(struct built *actual, struct connection *cList, int total) {
@@ -361,7 +357,7 @@ int main(int argc, char *argv[]) {
 
   /* We expect exactly one argument, the name of the file to dump. */
   if (argc != 1) {
-    fprintf(stderr, "This program need one parameter of TCP trace file path\n");
+    fprintf(stderr, "Error: This program need one parameter of TCP trace file path\n");
     exit(1);
   }
 
@@ -376,7 +372,7 @@ int main(int argc, char *argv[]) {
    */
 
   while ((packet = pcap_next(pcap, &header)) != NULL) {
-    dump_tcp_packet(packet, header.ts, header.caplen);
+    dump_packets(packet, header.ts, header.caplen);
   }
 
   /* Printing out the whole data and generate the report.*/
@@ -436,6 +432,6 @@ const char *timestamp_string(struct timeval ts) {
 void problem_pkt(const char *reason) { fprintf(stderr, "%s\n", reason); }
 
 /* Check if there is problem and print.*/
-void too_short(const char *truncated_hdr) {
-  fprintf(stderr, "packet is truncated and lacks a full %s\n", truncated_hdr);
+void parser_error(const char *truncated_hdr) {
+  fprintf(stderr, "Error: Packet is truncated and lacks a full %s\n", truncated_hdr);
 }
