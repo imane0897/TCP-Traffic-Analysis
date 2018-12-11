@@ -1,19 +1,38 @@
 /*
  * print_report.c
- * 
+ *
  * Print connection info report as required
  */
-#include "main.h"
 #include <string.h>
+#include "main.h"
+
+int print;
+int connected;
+int total;
+int counts;
+int countf;
+int countr;
+int countEnd;
+int minP = 1000;
+int maxP;
+int total_p;
+double total_win;
+double all_win;
+double total_time;
+double during;
+double min_time = 1000.00;
+double max_time;
+double all_time;
+int total_pack;
+double Total_RTT;
+double min_RTT = 1000.00;
+double max_RTT;
+int manys;
 
 int checkConn(struct built *actual, struct connection *cList, int total,
               int print);
 
-    // void print_report(int count, int connected, int countr, int countEnd,
-    //                   float min_time, float total_time, float max_time,
-    //                   float min_RTT, float max_RTT, float Total_RTT, int
-    //                   manys, int minP, int total_p, int maxP) {
-    void print_report() {
+void print_report() {
   printf("\nTCP analysis output starting from here: \n\n");
   /*
    ******   A   *******

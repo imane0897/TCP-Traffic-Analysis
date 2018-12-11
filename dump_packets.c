@@ -19,6 +19,9 @@
 #include <sys/types.h>
 #include "main.h"
 
+void problem_pkt(const char *reason);
+void parser_error(const char *truncated_hdr);
+
 void dump_packets(const unsigned char *packet, struct timeval ts,
                   unsigned int capture_len) {
   struct ip *ip_ptr;
@@ -56,7 +59,7 @@ void dump_packets(const unsigned char *packet, struct timeval ts,
   }
 
   if (ip_ptr->ip_p != IPPROTO_TCP) {
-    problem_pkt("Not TCP packet");
+    problem_pkt("This packet is not a TCP packet");
     return;
   }
 
@@ -99,4 +102,12 @@ void dump_packets(const unsigned char *packet, struct timeval ts,
   double tim = atof(timestamp_string_buf);
   cList[total].started = tim;
   total++;
+}
+
+//  Print error while parsing packets
+void problem_pkt(const char *reason) { fprintf(stderr, "%s\n", reason); }
+
+//  Print error while parsing packets if protocol header truncated
+void parser_error(const char *truncated_hdr) {
+  fprintf(stderr, "Error: Packet lacks a complete %s\n", truncated_hdr);
 }

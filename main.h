@@ -103,38 +103,9 @@ struct RTT {
 /* Returns a string representation of a timestamp. */
 const char *timestamp_string(struct timeval ts);
 
-/* Report a problem with dumping the packet with the given timestamp. */
-void problem_pkt(const char *reason);
-
-// Report parser error of specific problem when a packet being too short
-void parser_error(const char *truncated_hdr);
-
 // extern struct connection cList[MAX_NUM_CONNECTION];
-// extern int total;
-
-extern int print;
-extern int connected;
-extern int count;
 extern int total;
-extern int counts;
-extern int countf;
-extern int countr;
-extern int countEnd;
-extern int minP;
-extern int maxP;
-extern int total_p;
-extern double total_win;
-extern double all_win;
-extern double total_time;
-extern double during;
-extern double min_time;
-extern double max_time;
-extern double all_time;
-extern int total_pack;
-extern double Total_RTT;
-extern double min_RTT;
-extern double max_RTT;
-extern int manys;
+extern int count;
 
 extern struct connection cList[MAX_NUM_CONNECTION];
 extern struct built actual[MAX_NUM_CONNECTION];
