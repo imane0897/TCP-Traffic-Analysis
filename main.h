@@ -100,16 +100,11 @@ struct RTT {
   int ack_num;
 };
 
-/* Returns a string representation of a timestamp. */
-const char *timestamp_string(struct timeval ts);
+
 
 // extern struct connection cList[MAX_NUM_CONNECTION];
 extern int total;
-extern int count;
 
 extern struct connection cList[MAX_NUM_CONNECTION];
-extern struct built actual[MAX_NUM_CONNECTION];
-extern struct built actual1[MAX_NUM_CONNECTION];
-extern struct RTT slist[MAX_NUM_CONNECTION];
 
 #endif  // MAIN_H_

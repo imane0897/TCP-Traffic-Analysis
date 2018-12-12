@@ -28,22 +28,24 @@ double Total_RTT;
 double min_RTT = 1000.00;
 double max_RTT;
 int manys;
+int count = 0;
+struct connection cList[MAX_NUM_CONNECTION];
+struct built actual[MAX_NUM_CONNECTION];
 
-int checkConn(struct built *actual, struct connection *cList, int total,
-              int print);
+int checkConn(struct connection *cList, int total, int print);
 
 void print_report() {
   printf("\nTCP analysis output starting from here: \n\n");
   /*
    ******   A   *******
    */
-  printf("A. Total number of connections: %d\n\n", count);
+  printf("A. Total number of TCP connections: %d\n\n", count);
   printf("--------------------------------------------------------\n\n");
   /*
    ******   B   *******
    */
   printf("B. Connections' details: \n\n");
-  checkConn(actual, cList, total, print);
+  checkConn(cList, total, print);
   printf("--------------------------------------------------------\n\n");
   /*
    ******   C   *******
@@ -80,9 +82,7 @@ void print_report() {
          actual[0].max_win_size);
 }
 
-int checkConn(struct built *actual, struct connection *cList, int total,
-              int print) {
-  struct connection checkAll;
+int checkConn(struct connection *cList, int total, int print) {
   int src_data_len;
   int dst_data_len;
   int j;
@@ -94,6 +94,9 @@ int checkConn(struct built *actual, struct connection *cList, int total,
   int constant;
   int only = 1;
   int many = 1;
+
+  struct connection checkAll;
+
   checkAll.src_num_packet = 0;
   checkAll.dst_num_packet = 0;
 

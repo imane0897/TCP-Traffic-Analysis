@@ -21,6 +21,7 @@
 
 void problem_pkt(const char *reason);
 void parser_error(const char *truncated_hdr);
+const char *timestamp_string(struct timeval timestamp);
 
 void dump_packets(const unsigned char *packet, struct timeval ts,
                   unsigned int capture_len) {
@@ -78,17 +79,10 @@ void dump_packets(const unsigned char *packet, struct timeval ts,
    * TCP info -> cList[]
    */
   tcp_ptr = (struct tcp_header *)packet;
-
-  char *source = inet_ntoa(ip_ptr->ip_src);
-  strcpy(connect.src, source);
-  char *destination = inet_ntoa(ip_ptr->ip_dst);
-  strcpy(connect.dst, destination);
-  connect.src_port = ntohs(tcp_ptr->th_sport);
-  connect.dst_port = ntohs(tcp_ptr->th_dport);
-  strcpy(cList[total].src, connect.src);
-  strcpy(cList[total].dst, connect.dst);
-  cList[total].src_port = connect.src_port;
-  cList[total].dst_port = connect.dst_port;
+  strcpy(cList[total].src, inet_ntoa(ip_ptr->ip_src));
+  strcpy(cList[total].dst, inet_ntoa(ip_ptr->ip_dst));
+  cList[total].src_port = ntohs(tcp_ptr->th_sport);
+  cList[total].dst_port = ntohs(tcp_ptr->th_dport);
   cList[total].is_set = 0;
   cList[total].tflags = (unsigned int)tcp_ptr->th_flags;
   cList[total].length = capture_len - TH_OFF(tcp_ptr) * 4;
@@ -97,10 +91,8 @@ void dump_packets(const unsigned char *packet, struct timeval ts,
   cList[total].ack = ntohl(tcp_ptr->th_ack);
 
   static char timestamp_string_buf[256];
-
   sprintf(timestamp_string_buf, "%d.%06d", (int)ts.tv_sec, (int)ts.tv_usec);
-  double tim = atof(timestamp_string_buf);
-  cList[total].started = tim;
+  cList[total].started = atof(timestamp_string_buf);
   total++;
 }
 
@@ -110,4 +102,17 @@ void problem_pkt(const char *reason) { fprintf(stderr, "%s\n", reason); }
 //  Print error while parsing packets if protocol header truncated
 void parser_error(const char *truncated_hdr) {
   fprintf(stderr, "Error: Packet lacks a complete %s\n", truncated_hdr);
+}
+
+/* Note, this routine returns a pointer into a static buffer, and
+ * so each call overwrites the value returned by the previous call.
+ */
+/* Returns a string representation of a timestamp. */
+const char *timestamp_string(struct timeval timestamp) {
+  static char timestamp_string_buf[256];
+
+  sprintf(timestamp_string_buf, "%d.%06d", (int)timestamp.tv_sec,
+          (int)timestamp.tv_usec);
+
+  return timestamp_string_buf;
 }
