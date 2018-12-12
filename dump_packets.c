@@ -27,7 +27,6 @@ void dump_packets(const unsigned char *packet, struct timeval ts,
                   unsigned int capture_len) {
   struct ip *ip_ptr;
   struct tcp_header *tcp_ptr;
-  struct connection connect;
 
   unsigned int IP_header_length;
   unsigned int total_length = capture_len;
@@ -60,7 +59,7 @@ void dump_packets(const unsigned char *packet, struct timeval ts,
   }
 
   if (ip_ptr->ip_p != IPPROTO_TCP) {
-    problem_pkt("This packet is not a TCP packet");
+    // problem_pkt("This packet is not a TCP packet");
     return;
   }
 
@@ -76,24 +75,24 @@ void dump_packets(const unsigned char *packet, struct timeval ts,
   }
 
   /*
-   * TCP info -> cList[]
+   * TCP info -> tcp_packets[]
    */
   tcp_ptr = (struct tcp_header *)packet;
-  strcpy(cList[total].src, inet_ntoa(ip_ptr->ip_src));
-  strcpy(cList[total].dst, inet_ntoa(ip_ptr->ip_dst));
-  cList[total].src_port = ntohs(tcp_ptr->th_sport);
-  cList[total].dst_port = ntohs(tcp_ptr->th_dport);
-  cList[total].is_set = 0;
-  cList[total].tflags = (unsigned int)tcp_ptr->th_flags;
-  cList[total].length = capture_len - TH_OFF(tcp_ptr) * 4;
-  cList[total].win = ntohs(tcp_ptr->th_win);
-  cList[total].seq = ntohl(tcp_ptr->th_seq);
-  cList[total].ack = ntohl(tcp_ptr->th_ack);
+  strcpy(tcp_packets[all_conn_counter].src, inet_ntoa(ip_ptr->ip_src));
+  strcpy(tcp_packets[all_conn_counter].dst, inet_ntoa(ip_ptr->ip_dst));
+  tcp_packets[all_conn_counter].src_port = ntohs(tcp_ptr->th_sport);
+  tcp_packets[all_conn_counter].dst_port = ntohs(tcp_ptr->th_dport);
+  tcp_packets[all_conn_counter].check = 0;
+  tcp_packets[all_conn_counter].th_flags = (unsigned int)tcp_ptr->th_flags;
+  tcp_packets[all_conn_counter].length = capture_len - TH_OFF(tcp_ptr) * 4;
+  tcp_packets[all_conn_counter].win = ntohs(tcp_ptr->th_win);
+  tcp_packets[all_conn_counter].seq = ntohl(tcp_ptr->th_seq);
+  tcp_packets[all_conn_counter].ack = ntohl(tcp_ptr->th_ack);
 
   static char timestamp_string_buf[256];
   sprintf(timestamp_string_buf, "%d.%06d", (int)ts.tv_sec, (int)ts.tv_usec);
-  cList[total].started = atof(timestamp_string_buf);
-  total++;
+  tcp_packets[all_conn_counter].started = atof(timestamp_string_buf);
+  all_conn_counter++;
 }
 
 //  Print error while parsing packets
@@ -104,10 +103,7 @@ void parser_error(const char *truncated_hdr) {
   fprintf(stderr, "Error: Packet lacks a complete %s\n", truncated_hdr);
 }
 
-/* Note, this routine returns a pointer into a static buffer, and
- * so each call overwrites the value returned by the previous call.
- */
-/* Returns a string representation of a timestamp. */
+// Returns a string representation of a timestamp.
 const char *timestamp_string(struct timeval timestamp) {
   static char timestamp_string_buf[256];
 

@@ -1,7 +1,7 @@
 /*
  * This project is a tool for TCP traffic analysis.
  *
- * Requirement: TCP trace file (Recommend using Wireshark for generation)
+ * Requirement: TCP trace file
  * Author:      An Yameng
  * Repository:  https://github.com/imane0897/TCP-Traffic-Analysis
  */
@@ -21,12 +21,9 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-
-
-void print_report();
 void dump_packets(const unsigned char *packet, struct timeval ts,
                   unsigned int capture_len);
-
+void print_report();
 
 int main(int argc, char *argv[]) {
   /*

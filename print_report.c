@@ -3,18 +3,19 @@
  *
  * Print connection info report as required
  */
+#include "print_report.h"
 #include <string.h>
 #include "main.h"
 
-int print;
-int connected;
-int total;
+
+int complete_tcp_counter;
+int all_conn_counter;
 int counts;
 int countf;
-int countr;
-int countEnd;
-int minP = 1000;
-int maxP;
+int reset_tcp_counter;
+int open_tcp_counter;
+int min_packet = 1000;
+int max_packet;
 int total_p;
 double total_win;
 double all_win;
@@ -24,67 +25,76 @@ double min_time = 1000.00;
 double max_time;
 double all_time;
 int total_pack;
-double Total_RTT;
-double min_RTT = 1000.00;
-double max_RTT;
+double total_rtt;
+double min_rtt = 1000.00;
+double max_rtt;
 int manys;
 int count = 0;
-struct connection cList[MAX_NUM_CONNECTION];
-struct built actual[MAX_NUM_CONNECTION];
+struct tcp_packet tcp_packets[MAX_NUM_CONNECTION];
+struct connection a[MAX_NUM_CONNECTION];
 
-int checkConn(struct connection *cList, int total, int print);
+
+
+int count_tcp();
+int checkConn(struct tcp_packet *tcp_packets, int all_conn_counter);
+
 
 void print_report() {
-  printf("\nTCP analysis output starting from here: \n\n");
+  printf(
+      "\n========================Starting from here======================== "
+      "\n\n");
   /*
    ******   A   *******
    */
-  printf("A. Total number of TCP connections: %d\n\n", count);
+  printf("A. Total number of TCP connections: %d\n\n", count_tcp());
   printf("--------------------------------------------------------\n\n");
   /*
    ******   B   *******
    */
   printf("B. Connections' details: \n\n");
-  checkConn(cList, total, print);
+  checkConn(tcp_packets, all_conn_counter);
   printf("--------------------------------------------------------\n\n");
   /*
    ******   C   *******
    */
   printf("C. General\n\n");
-  printf("Total number of complete TCP connections: %d\n", connected);
-  printf("Number of reset TCP connections: %d\n", countr);
+  printf("Total number of complete TCP connections: %d\n",
+         complete_tcp_counter);
+  printf("Number of reset TCP connections: %d\n", reset_tcp_counter);
   printf(
       "Number of TCP connections that were still open when the trace capture "
       "ended: %d\n",
-      countEnd);
+      open_tcp_counter);
   printf("--------------------------------------------------------\n\n");
   /*
    ******   D   *******
    */
   printf("D. Complete TCP connections:\n\n");
   printf("Minimum time durations: %f\n", min_time);
-  printf("Mean time durations: %f\n", total_time / connected);
+  printf("Mean time durations: %f\n", total_time / complete_tcp_counter);
   printf("Maximum time durations: %f\n\n", max_time);
-  printf("Minimum RTT values including both send/received: %.3f\n", min_RTT);
+  printf("Minimum RTT values including both send/received: %.3f\n", min_rtt);
   printf("Mean RTT values including both send/received: %.3f\n",
-         Total_RTT / manys);
-  printf("Maximum RTT values including both send/received: %.3f\n\n", max_RTT);
-  printf("Minimum number of packets including both send/received: %d\n", minP);
+         total_rtt / manys);
+  printf("Maximum RTT values including both send/received: %.3f\n\n", max_rtt);
+  printf("Minimum number of packets including both send/received: %d\n",
+         min_packet);
   printf("Mean number of packets including both send/received: %d\n",
-         total_p / connected);
+         total_p / complete_tcp_counter);
   printf("Maximum number of packets including both send/received: %d\n\n",
-         maxP);
+         max_packet);
   printf("Minimum receive window sizes including both send/received: %d\n",
-         actual[0].min_win_size);
+         a[0].min_win_size);
   printf("Mean receive window sizes including both send/received: %f\n",
          total_win / total_pack);
   printf("Maximum receive window sizes including both send/received: %d\n\n",
-         actual[0].max_win_size);
+         a[0].max_win_size);
+  printf(
+      "\n================================END================================ "
+      "\n\n");
 }
 
-int checkConn(struct connection *cList, int total, int print) {
-  int src_data_len;
-  int dst_data_len;
+int checkConn(struct tcp_packet *tcp_packets, int all_conn_counter) {
   int j;
   int k;
   int nums;
@@ -92,39 +102,48 @@ int checkConn(struct connection *cList, int total, int print) {
   int k1;
   int k2;
   int constant;
-  int only = 1;
-  int many = 1;
+  int tcp_index = 1;
+  int print;
+  int only;
+  int src_data_len;
+  int dst_data_len;
 
-  struct connection checkAll;
+  struct tcp_packet checkAll;
 
-  checkAll.src_num_packet = 0;
-  checkAll.dst_num_packet = 0;
-
-  for (j = 0; j < total; j++) {
+  for (j = 0; j < all_conn_counter; j++) {
     only = 1;
-    if (cList[j].is_set == 0) {
-      print = 2;
-      strcpy(actual[0].src, cList[j].src);
-      strcpy(actual[0].dst, cList[j].dst);
-      actual[0].src_port = cList[j].src_port;
-      actual[0].dst_port = cList[j].dst_port;
-      actual[0].length = cList[j].length;
-      actual[0].win = cList[j].win;
-      actual[0].started = cList[j].started;
-      actual[0].seq = cList[j].seq;
-      actual[0].ack = cList[j].ack;
-      actual[0].send = actual[0].seq + actual[0].length;
+    print = 0;
+    src_data_len = 0;
+    dst_data_len = 0;
+    checkAll.src_num_packet = 0;
+    checkAll.dst_num_packet = 0;
+    counts = 0;
+    countf = 0;
 
-      if (cList[j].tflags == 17 || cList[j].tflags == 1 ||
-          cList[j].tflags == 25) {
+    if (tcp_packets[j].check == 0) {
+      print = 2;
+      strcpy(a[0].src, tcp_packets[j].src);
+      strcpy(a[0].dst, tcp_packets[j].dst);
+      a[0].src_port = tcp_packets[j].src_port;
+      a[0].dst_port = tcp_packets[j].dst_port;
+      a[0].length = tcp_packets[j].length;
+      a[0].win = tcp_packets[j].win;
+      a[0].started = tcp_packets[j].started;
+      a[0].seq = tcp_packets[j].seq;
+      a[0].ack = tcp_packets[j].ack;
+      a[0].send = a[0].seq + a[0].length;
+
+      if (tcp_packets[j].th_flags == 17 || tcp_packets[j].th_flags == 1 ||
+          tcp_packets[j].th_flags == 25) {
         countf++;
       }
-      if (cList[j].tflags == 2 || cList[j].tflags == 18) {
+
+      if (tcp_packets[j].th_flags == 2 || tcp_packets[j].th_flags == 18) {
         counts++;
       }
 
-      if (cList[j].tflags == 4 && only == 1) {
-        countr++;
+      if (tcp_packets[j].th_flags == 4 && only == 1) {
+        reset_tcp_counter++;
         only = 0;
         src_data_len = 0;
         dst_data_len = 0;
@@ -133,42 +152,45 @@ int checkConn(struct connection *cList, int total, int print) {
         counts = 0;
         countf = 0;
       }
-      if ((cList[j].tflags == 4 && only == 1) ||
-          (only == 1 && cList[j].tflags == 20)) {
-        countr++;
+
+      if (only == 1 && tcp_packets[j].th_flags == 20) {
+        reset_tcp_counter++;
         only = 0;
       }
+
       checkAll.src_num_packet++;
-      cList[j].is_set = 1;
+      tcp_packets[j].check = 1;
     }
 
     k = 1;
     int i = j + 1;
-    for (; i < total; i++) {
-      if ((!strcmp(cList[i].src, actual[0].src) &&
-           !strcmp(cList[i].dst, actual[0].dst) &&
-           actual[0].src_port == cList[i].src_port &&
-           actual[0].dst_port == cList[i].dst_port && cList[i].is_set == 0) ||
-          (!strcmp(cList[i].src, actual[0].dst) &&
-           !strcmp(cList[i].dst, actual[0].src) &&
-           actual[0].src_port == cList[i].dst_port &&
-           actual[0].dst_port == cList[i].src_port && cList[i].is_set == 0)) {
-        cList[i].is_set = 1;
+    for (; i < all_conn_counter; i++) {
+      if ((!strcmp(tcp_packets[i].src, a[0].src) &&
+           !strcmp(tcp_packets[i].dst, a[0].dst) &&
+           a[0].src_port == tcp_packets[i].src_port &&
+           a[0].dst_port == tcp_packets[i].dst_port &&
+           tcp_packets[i].check == 0) ||
+          (!strcmp(tcp_packets[i].src, a[0].dst) &&
+           !strcmp(tcp_packets[i].dst, a[0].src) &&
+           a[0].src_port == tcp_packets[i].dst_port &&
+           a[0].dst_port == tcp_packets[i].src_port &&
+           tcp_packets[i].check == 0)) {
+        tcp_packets[i].check = 1;
 
-        strcpy(actual[k].src, cList[i].src);
-        strcpy(actual[k].dst, cList[i].dst);
-        actual[k].src_port = cList[i].src_port;
-        actual[k].dst_port = cList[i].dst_port;
-        actual[k].length = cList[i].length;
-        actual[k].win = cList[i].win;
-        actual[k].started = cList[i].started;
-        actual[k].seq = cList[i].seq;
-        actual[k].ack = cList[i].ack;
-        actual[k].send = actual[k].seq + actual[k].length;
+        strcpy(a[k].src, tcp_packets[i].src);
+        strcpy(a[k].dst, tcp_packets[i].dst);
+        a[k].src_port = tcp_packets[i].src_port;
+        a[k].dst_port = tcp_packets[i].dst_port;
+        a[k].length = tcp_packets[i].length;
+        a[k].win = tcp_packets[i].win;
+        a[k].started = tcp_packets[i].started;
+        a[k].seq = tcp_packets[i].seq;
+        a[k].ack = tcp_packets[i].ack;
+        a[k].send = a[k].seq + a[k].length;
 
         k++;
-        if (cList[j].tflags == 4 && only == 1) {
-          countr++;
+        if (tcp_packets[j].th_flags == 4 && only == 1) {
+          reset_tcp_counter++;
           only = 0;
           src_data_len = 0;
           dst_data_len = 0;
@@ -178,16 +200,16 @@ int checkConn(struct connection *cList, int total, int print) {
           countf = 0;
           k = 0;
         }
-        if ((cList[i].tflags == 4 && only == 1) ||
-            (only == 1 && cList[i].tflags == 20)) {
-          countr++;
+        if ((tcp_packets[i].th_flags == 4 && only == 1) ||
+            (only == 1 && tcp_packets[i].th_flags == 20)) {
+          reset_tcp_counter++;
           only = 0;
         }
-        if (cList[i].tflags == 17 || cList[i].tflags == 1 ||
-            cList[i].tflags == 25) {
+        if (tcp_packets[i].th_flags == 17 || tcp_packets[i].th_flags == 1 ||
+            tcp_packets[i].th_flags == 25) {
           countf++;
         }
-        if (cList[i].tflags == 2 || cList[i].tflags == 18) {
+        if (tcp_packets[i].th_flags == 2 || tcp_packets[i].th_flags == 18) {
           counts++;
         }
       }
@@ -195,62 +217,56 @@ int checkConn(struct connection *cList, int total, int print) {
 
     k2 = k1 = constant = num1 = nums = k;
     while (k > 0) {
-      if (!strcmp(actual[k].src, actual[0].src) &&
-          !strcmp(actual[k].dst, actual[0].dst) &&
-          actual[0].src_port == actual[k].src_port &&
-          actual[0].dst_port == actual[k].dst_port) {
+      if (!strcmp(a[k].src, a[0].src) && !strcmp(a[k].dst, a[0].dst) &&
+          a[0].src_port == a[k].src_port && a[0].dst_port == a[k].dst_port) {
         checkAll.src_num_packet++;
-        src_data_len = src_data_len + actual[k].length;
+        src_data_len = src_data_len + a[k].length;
       }
-      if (!strcmp(actual[k].src, actual[0].dst) &&
-          !strcmp(actual[k].dst, actual[0].src) &&
-          actual[0].src_port == actual[k].dst_port &&
-          actual[0].dst_port == actual[k].src_port) {
+      if (!strcmp(a[k].src, a[0].dst) && !strcmp(a[k].dst, a[0].src) &&
+          a[0].src_port == a[k].dst_port && a[0].dst_port == a[k].src_port) {
         checkAll.dst_num_packet++;
-        dst_data_len = dst_data_len + actual[k].length;
+        dst_data_len = dst_data_len + a[k].length;
       }
       k--;
     }
 
-    /* Ckecking if the connecion is connected. */
+    /* Ckecking if the connecion is complete_tcp_counter. */
     if ((counts == 1 && countf == 1) || (counts == 2 && countf == 1) ||
         (counts == 2 && countf == 2)) {
-      connected++;
+      complete_tcp_counter++;
       print = 3;
     }
-    /* Print all the data which is not connected. */
+    /* Print all the data which is not complete tcp connection */
     if (print == 2) {
-      printf("Connection %d:\n", many);
-      printf("Source Address: %s\n", cList[j].src);
-      printf("Destination address: %s\n", cList[j].dst);
-      printf("Source Port: %d\n", cList[j].src_port);
-      printf("Destination Port: %d\n", cList[j].dst_port);
-      printf("Stats: S%dF%d\n", counts, countf);
+      printf("Connection %d:\n", tcp_index++);
+      printf("Source Address: %s\n", tcp_packets[j].src);
+      printf("Destination address: %s\n", tcp_packets[j].dst);
+      printf("Source Port: %d\n", tcp_packets[j].src_port);
+      printf("Destination Port: %d\n", tcp_packets[j].dst_port);
+      printf("Status: S%dF%d\n", counts, countf);
       if (countf == 0) {
-        countEnd++;
+        open_tcp_counter++;
       }
-      printf("END\n");
       printf("+++++++++++++++++++++++++++++\n");
-      many++;
     }
-    /* Print all the data which is not connected. */
+    /* Print all the data which is complete TCP connection */
     if (print == 3) {
       num1--;
       int numRTT;
       int numsRTT;
       for (numRTT = 0; numRTT < constant; numRTT++) {
-        while (actual[numRTT].length == 0 && numRTT > 0) {
+        while (a[numRTT].length == 0 && numRTT > 0) {
           numRTT++;
         }
         for (numsRTT = numRTT + 1; numsRTT < constant; numsRTT++) {
-          if (actual[numRTT].send == actual[numsRTT].ack) {
-            if (min_RTT > actual[numsRTT].started - actual[numRTT].started) {
-              min_RTT = actual[numsRTT].started - actual[numRTT].started;
+          if (a[numRTT].send == a[numsRTT].ack) {
+            if (min_rtt > a[numsRTT].started - a[numRTT].started) {
+              min_rtt = a[numsRTT].started - a[numRTT].started;
             }
-            if (max_RTT < actual[numsRTT].started - actual[numRTT].started) {
-              max_RTT = actual[numsRTT].started - actual[numRTT].started;
+            if (max_rtt < a[numsRTT].started - a[numRTT].started) {
+              max_rtt = a[numsRTT].started - a[numRTT].started;
             }
-            Total_RTT += actual[numsRTT].started - actual[numRTT].started;
+            total_rtt += a[numsRTT].started - a[numRTT].started;
             manys++;
             break;
           }
@@ -259,52 +275,52 @@ int checkConn(struct connection *cList, int total, int print) {
 
       nums--;
       while (nums >= 0) {
-        if (actual[0].min_win_size > actual[nums].win) {
-          actual[0].min_win_size = actual[nums].win;
+        if (a[0].min_win_size > a[nums].win) {
+          a[0].min_win_size = a[nums].win;
         }
-        if (actual[0].max_win_size < actual[nums].win) {
-          actual[0].max_win_size = actual[nums].win;
+        if (a[0].max_win_size < a[nums].win) {
+          a[0].max_win_size = a[nums].win;
         }
-        total_win += actual[nums].win;
+        total_win += a[nums].win;
         nums--;
       }
       total_pack += constant;
 
       while (k1 > 0) {
-        if (minP > constant) {
-          minP = constant;
+        if (min_packet > constant) {
+          min_packet = constant;
         }
-        if (maxP < constant) {
-          maxP = constant;
+        if (max_packet < constant) {
+          max_packet = constant;
         }
         k1--;
       }
       total_p += constant;
       k2--;
-      if (min_time > (actual[k2].started - actual[0].started)) {
-        min_time = (actual[k2].started - actual[0].started);
+      if (min_time > (a[k2].started - a[0].started)) {
+        min_time = (a[k2].started - a[0].started);
       }
-      if (max_time < (actual[k2].started - actual[0].started)) {
-        max_time = (actual[k2].started - actual[0].started);
+      if (max_time < (a[k2].started - a[0].started)) {
+        max_time = (a[k2].started - a[0].started);
       }
-      total_time += (actual[constant - 1].started - actual[0].started);
+      total_time += (a[constant - 1].started - a[0].started);
 
       /* Printing the whole data ...*/
-      printf("Connection %d:\n", many);
-      printf("Source Address: %s\n", cList[j].src);
-      printf("Destination address: %s\n", cList[j].dst);
-      printf("Source Port: %d\n", cList[j].src_port);
-      printf("Destination Port: %d\n", cList[j].dst_port);
-      if (countr % 2 == 0) {
-        printf("Stats: S%dF%d\n", counts, countf);
+      printf("Connection %d:\n", tcp_index++);
+      printf("Source Address: %s\n", tcp_packets[j].src);
+      printf("Destination address: %s\n", tcp_packets[j].dst);
+      printf("Source Port: %d\n", tcp_packets[j].src_port);
+      printf("Destination Port: %d\n", tcp_packets[j].dst_port);
+      if (reset_tcp_counter % 2 == 0) {
+        printf("Status: S%dF%d\n", counts, countf);
       } else {
-        printf("Stats: R\n");
-        printf("Stats: S%dF%d\n", counts, countf);
+        printf("Status: R\n");
+        printf("Status: S%dF%d\n", counts, countf);
       }
-      printf("Start time: %f\n", actual[0].started - cList[0].started);
-      printf("End Time: %f\n", actual[num1].started - cList[0].started);
-      printf("Duration: %f\n", (actual[num1].started - cList[0].started) -
-                                   (actual[0].started - cList[0].started));
+      printf("Start time: %f\n", a[0].started - tcp_packets[0].started);
+      printf("End Time: %f\n", a[num1].started - tcp_packets[0].started);
+      printf("Duration: %f\n", (a[num1].started - tcp_packets[0].started) -
+                                   (a[0].started - tcp_packets[0].started));
       printf("Number of packets sent from Source to Destination: %d\n",
              checkAll.src_num_packet);
       printf("Number of packets sent from Destination to Source: %d\n",
@@ -316,21 +332,47 @@ int checkConn(struct connection *cList, int total, int print) {
       printf("Number of data bytes sent from Destination to Source: %d\n",
              dst_data_len);
       printf("Total number of data bytes: %d\n", src_data_len + dst_data_len);
-      printf("END\n");
       printf("+++++++++++++++++++++++++++++\n");
-      many++;
     }
-
-    /* Reset all of the data into 0, and reset the only value. */
-    only = 1;
-    print = 0;
-    src_data_len = 0;
-    dst_data_len = 0;
-    checkAll.src_num_packet = 0;
-    checkAll.dst_num_packet = 0;
-    counts = 0;
-    countf = 0;
   }
 
   return 0;
+}
+
+int count_tcp() {
+  int i, j, k;
+  int counter = 0;
+  struct connection temp[MAX_NUM_CONNECTION];
+  for (j = 0; j < all_conn_counter; j++) {
+    if (tcp_packets[j].flag == 0) {
+      strcpy(temp[0].src, tcp_packets[j].src);
+      strcpy(temp[0].dst, tcp_packets[j].dst);
+      temp[0].src_port = tcp_packets[j].src_port;
+      temp[0].dst_port = tcp_packets[j].dst_port;
+      tcp_packets[j].flag = 1;
+      counter++;
+    }
+
+    for (k = 0, i = j + 1; i < all_conn_counter; i++) {
+      if ((!strcmp(tcp_packets[i].src, temp[0].src) &&
+           !strcmp(tcp_packets[i].dst, temp[0].dst) &&
+           temp[0].src_port == tcp_packets[i].src_port &&
+           temp[0].dst_port == tcp_packets[i].dst_port &&
+           tcp_packets[i].flag == 0) ||
+          (!strcmp(tcp_packets[i].src, temp[0].dst) &&
+           !strcmp(tcp_packets[i].dst, temp[0].src) &&
+           temp[0].src_port == tcp_packets[i].dst_port &&
+           temp[0].dst_port == tcp_packets[i].src_port &&
+           tcp_packets[i].flag == 0)) {
+        tcp_packets[i].flag = 1;
+        strcpy(temp[k].src, tcp_packets[i].src);
+        strcpy(temp[k].dst, tcp_packets[i].dst);
+        temp[k].src_port = tcp_packets[i].src_port;
+        temp[k].dst_port = tcp_packets[i].dst_port;
+        k++;
+      }
+    }
+  }
+
+  return counter;
 }

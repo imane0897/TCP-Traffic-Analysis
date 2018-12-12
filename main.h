@@ -43,12 +43,12 @@ struct tcp_header {
 /*
   The structure from the Lab
 */
-struct connection {
+struct tcp_packet {
   char src[MAX_STR_LEN];  // source ip
   char dst[MAX_STR_LEN];  // destination ip
   uint16_t src_port;      // source port number
   uint16_t dst_port;      // destination port number
-  int tflags;
+  int th_flags;
   int syn_count;  // flag count
   int fin_count;
   int rst_count;
@@ -69,42 +69,13 @@ struct connection {
   int length;
   int seq;
   int ack;
-  int is_set;
-  int is_set2;
-};
-
-struct built {
-  char src[MAX_STR_LEN];  // source ip
-  char dst[MAX_STR_LEN];  // destination ip
-  uint16_t src_port;      // source port number
-  uint16_t dst_port;      // destination port number
-  double started;
-  double duration;
-  int syn_count;  // flag count*/
-  int fin_count;
-  int rst_count;
-  int length;
-  uint16_t win;
-  uint16_t max_win_size;  // max window size
-  uint16_t min_win_size;  // min window size
-  double sum_win_size;
-  int is_set;
-  int seq;
-  int ack;
-  int send;
-};
-
-struct RTT {
-  double curr_time;
-  int seq_num;
-  int ack_num;
+  int check;
+  int flag;
 };
 
 
+extern int all_conn_counter;
 
-// extern struct connection cList[MAX_NUM_CONNECTION];
-extern int total;
-
-extern struct connection cList[MAX_NUM_CONNECTION];
+extern struct tcp_packet tcp_packets[MAX_NUM_CONNECTION];
 
 #endif  // MAIN_H_
