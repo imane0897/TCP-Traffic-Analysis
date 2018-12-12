@@ -83,13 +83,13 @@ int traverse_packets(struct tcp_packet *tcp_packets, int all_conn_counter) {
   int i, j, k;
   int counts, countf;
   int k1, k2, nums, num1;
-  int print_flag, only, constant, tcp_index = 1;
+  int print_flag, reset_flag, cur_max_index, tcp_index = 1;
   int src_data_len, dst_data_len;
 
   struct tcp_packet temp;
 
   for (j = 0; j < all_conn_counter; j++) {
-    only = 1;
+    reset_flag = 1;
     print_flag = 0;
     src_data_len = 0;
     dst_data_len = 0;
@@ -120,9 +120,9 @@ int traverse_packets(struct tcp_packet *tcp_packets, int all_conn_counter) {
         counts++;
       }
 
-      if (tcp_packets[j].th_flags == 4 && only == 1) {
+      if (tcp_packets[j].th_flags == 4 && reset_flag == 1) {
         reset_tcp_counter++;
-        only = 0;
+        reset_flag = 0;
         src_data_len = 0;
         dst_data_len = 0;
         temp.src_num_packet = 0;
@@ -131,9 +131,9 @@ int traverse_packets(struct tcp_packet *tcp_packets, int all_conn_counter) {
         countf = 0;
       }
 
-      if (only == 1 && tcp_packets[j].th_flags == 20) {
+      if (reset_flag == 1 && tcp_packets[j].th_flags == 20) {
         reset_tcp_counter++;
-        only = 0;
+        reset_flag = 0;
       }
 
       temp.src_num_packet++;
@@ -165,10 +165,10 @@ int traverse_packets(struct tcp_packet *tcp_packets, int all_conn_counter) {
         tcp_conn[k].send = tcp_conn[k].seq + tcp_conn[k].length;
 
         k++;
-        
-        if (tcp_packets[j].th_flags == 4 && only == 1) {
+
+        if (tcp_packets[j].th_flags == 4 && reset_flag == 1) {
           reset_tcp_counter++;
-          only = 0;
+          reset_flag = 0;
           src_data_len = 0;
           dst_data_len = 0;
           temp.src_num_packet = 0;
@@ -177,10 +177,10 @@ int traverse_packets(struct tcp_packet *tcp_packets, int all_conn_counter) {
           countf = 0;
           k = 0;
         }
-        if ((tcp_packets[i].th_flags == 4 && only == 1) ||
-            (only == 1 && tcp_packets[i].th_flags == 20)) {
+        if ((tcp_packets[i].th_flags == 4 && reset_flag == 1) ||
+            (reset_flag == 1 && tcp_packets[i].th_flags == 20)) {
           reset_tcp_counter++;
-          only = 0;
+          reset_flag = 0;
         }
         if (tcp_packets[i].th_flags == 17 || tcp_packets[i].th_flags == 1 ||
             tcp_packets[i].th_flags == 25) {
@@ -192,7 +192,7 @@ int traverse_packets(struct tcp_packet *tcp_packets, int all_conn_counter) {
       }
     }
 
-    k2 = k1 = constant = num1 = nums = k;
+    k2 = k1 = cur_max_index = num1 = nums = k;
     while (k > 0) {
       if (!strcmp(tcp_conn[k].src, tcp_conn[0].src) &&
           !strcmp(tcp_conn[k].dst, tcp_conn[0].dst) &&
@@ -211,13 +211,14 @@ int traverse_packets(struct tcp_packet *tcp_packets, int all_conn_counter) {
       k--;
     }
 
-    // Ckecking if the connecion is complete_tcp_counter.
+    // Ckecking if the connecion is complete connections
     if ((counts == 1 && countf == 1) || (counts == 2 && countf == 1) ||
         (counts == 2 && countf == 2)) {
       complete_tcp_counter++;
       print_flag = 3;
     }
-    // Print all the data which is not complete tcp connection
+
+    // Print not complete tcp connection
     if (print_flag == 2) {
       printf("Connection %d:\n", tcp_index++);
       printf("Source Address: %s\n", tcp_packets[j].src);
@@ -230,15 +231,16 @@ int traverse_packets(struct tcp_packet *tcp_packets, int all_conn_counter) {
       }
       printf("-----------------------------------\n");
     }
-    // Print all the data which is complete TCP connection
+
+    // Print complete TCP connection
     if (print_flag == 3) {
       num1--;
       int index_s, index_d;
-      for (index_s = 0; index_s < constant; index_s++) {
+      for (index_s = 0; index_s < cur_max_index; index_s++) {
         while (tcp_conn[index_s].length == 0 && index_s > 0) {
           index_s++;
         }
-        for (index_d = index_s + 1; index_d < constant; index_d++) {
+        for (index_d = index_s + 1; index_d < cur_max_index; index_d++) {
           if (tcp_conn[index_s].send == tcp_conn[index_d].ack) {
             if (min_rtt >
                 tcp_conn[index_d].started - tcp_conn[index_s].started) {
@@ -267,24 +269,20 @@ int traverse_packets(struct tcp_packet *tcp_packets, int all_conn_counter) {
         nums--;
       }
 
-      while (k1 > 0) {
-        if (min_packet > constant) {
-          min_packet = constant;
-        }
-        if (max_packet < constant) {
-          max_packet = constant;
-        }
-        k1--;
+      for (; k1 > 0; k1--) {
+        min_packet = min_packet < cur_max_index ? min_packet : cur_max_index;
+        max_packet = max_packet > cur_max_index ? max_packet : cur_max_index;
       }
-      total_packets += constant;
-      k2--;
+
+      total_packets += cur_max_index;
+      k2 -= 1;
       if (min_time > (tcp_conn[k2].started - tcp_conn[0].started)) {
         min_time = (tcp_conn[k2].started - tcp_conn[0].started);
       }
       if (max_time < (tcp_conn[k2].started - tcp_conn[0].started)) {
         max_time = (tcp_conn[k2].started - tcp_conn[0].started);
       }
-      total_time += (tcp_conn[constant - 1].started - tcp_conn[0].started);
+      total_time += (tcp_conn[cur_max_index - 1].started - tcp_conn[0].started);
 
       printf("Connection %d:\n", tcp_index++);
       printf("Source Address: %s\n", tcp_packets[j].src);
