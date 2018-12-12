@@ -4,13 +4,7 @@
 #include <arpa/inet.h>
 #include <pcap.h>
 #include <sys/types.h>
-/* We've included the UDP header struct for your ease of customization.
- * For your protocol, you might want to look at netinet/tcp.h for hints
- * on how to deal with single bits or fields that are smaller than a byte
- * in length.
- *
- * Per RFC 768, September, 1981.
- */
+
 #define MAX_STR_LEN 200
 #define MAX_NUM_CONNECTION 10000
 

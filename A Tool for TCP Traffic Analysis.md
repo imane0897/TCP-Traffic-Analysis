@@ -32,50 +32,62 @@ For a segment, RTT is the amount of time between when the segment is sent (passe
 
 2. Process TCP packets
 
+   - Count total number of TCP connections
+
    ```c
-   void func() {
-     int i, j, k;
-     struct connection temp[MAX_NUM_CONNECTION];
-     for (j = 0; j < all_conn_counter; j++) {
+   int count_tcp() {
+     int counter = 0;
+     struct connection temp;
+     
+     for (int j = 0; j < all_conn_counter; j++) {
        if (tcp_packets[j].flag == 0) {
-         strcpy(temp[0].src, tcp_packets[j].src);
-         strcpy(temp[0].dst, tcp_packets[j].dst);
-         temp[0].src_port = tcp_packets[j].src_port;
-         temp[0].dst_port = tcp_packets[j].dst_port;
+         strcpy(temp.src, tcp_packets[j].src);
+         strcpy(temp.dst, tcp_packets[j].dst);
+         temp.src_port = tcp_packets[j].src_port;
+         temp.dst_port = tcp_packets[j].dst_port;
          tcp_packets[j].flag = 1;
+         counter++;
        }
    
-       for (k = 0, i = j + 1; i < all_conn_counter; i++) {
-         if ((!strcmp(tcp_packets[i].src, temp[0].src) &&
-              !strcmp(tcp_packets[i].dst, temp[0].dst) &&
-              temp[0].src_port == tcp_packets[i].src_port &&
-              temp[0].dst_port == tcp_packets[i].dst_port &&
+       for (int i = j + 1; i < all_conn_counter; i++) {
+         // if not dependent connection
+         // connections with the same src&dts address and port are viewed as the
+         // same connections
+         if ((!strcmp(tcp_packets[i].src, temp.src) &&
+              !strcmp(tcp_packets[i].dst, temp.dst) &&
+              temp.src_port == tcp_packets[i].src_port &&
+              temp.dst_port == tcp_packets[i].dst_port &&
               tcp_packets[i].flag == 0) ||
-             (!strcmp(tcp_packets[i].src, temp[0].dst) &&
-              !strcmp(tcp_packets[i].dst, temp[0].src) &&
-              temp[0].src_port == tcp_packets[i].dst_port &&
-              temp[0].dst_port == tcp_packets[i].src_port &&
+             (!strcmp(tcp_packets[i].src, temp.dst) &&
+              !strcmp(tcp_packets[i].dst, temp.src) &&
+              temp.src_port == tcp_packets[i].dst_port &&
+              temp.dst_port == tcp_packets[i].src_port &&
               tcp_packets[i].flag == 0)) {
            tcp_packets[i].flag = 1;
-           strcpy(temp[k].src, tcp_packets[i].src);
-           strcpy(temp[k].dst, tcp_packets[i].dst);
-           temp[k].src_port = tcp_packets[i].src_port;
-           temp[k].dst_port = tcp_packets[i].dst_port;
-           k++;
          }
        }
      }
+   
+     return counter;
    }
    ```
-
+    - reset TCP
+    - still open TCP
+    - complete TCP
 3. Print result
 
 ## Example
 
+![image-20181212160000517](https://ws4.sinaimg.cn/large/006tNbRwly1fy40qvwy1jj311o0u0qfe.jpg)
 
+![image-20181212153604288](https://ws4.sinaimg.cn/large/006tNbRwly1fy401zb7h6j311o0u04bp.jpg)
+
+![image-20181212153323120](/Users/aym/Library/Application Support/typora-user-images/image-20181212153344353.png)
 
 ## References
 
 [1] https://unix.superglobalmegacorp.com/Net2/newsrc/netinet/tcp.h.html
 
 [2] https://en.wikipedia.org/wiki/Transmission_Control_Protocol
+
+[3] Kurose J F, Ross K W. Computer networking: a top-down approach: international edition[M]. Pearson Higher Ed, 2013.
