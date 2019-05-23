@@ -1,4 +1,4 @@
-#A Tool for TCP Traffic Analysis
+# A Tool for TCP Traffic Analysis
 
 ## Usage
 
@@ -350,7 +350,7 @@ For a segment, RTT is the amount of time between when the segment is sent (passe
 
 ![image-20181212153604288](https://ws4.sinaimg.cn/large/006tNbRwly1fy401zb7h6j311o0u04bp.jpg)
 
-![image-20181212153323120](/Users/aym/Library/Application Support/typora-user-images/image-20181212153344353.png)
+![006tNc79ly1g3azgxtdbfj311o0u00wj.png](https://i.loli.net/2019/05/23/5ce5f52dec89596383.png)
 
 ## References
 
